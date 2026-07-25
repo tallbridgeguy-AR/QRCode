@@ -6,9 +6,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<!-- Add the 3D Model Viewer script here -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"></script>
 </head>
 <body>
-
+<!-- Place the 3D Box inside the <body> -->
+  <div style="width: 100%; max-width: 600px; margin: 0 auto 20px auto;">
+    <model-viewer 
+      src="mymodel.glb" 
+      alt="3D Model" 
+      camera-controls 
+      auto-rotate 
+      shadow-intensity="1" 
+      style="width: 100%; height: 400px; background-color: #f4f4f4; border-radius: 8px;">
+    </model-viewer>
+  </div>
   <!-- Batch Section -->
   <h2>QR Creator:<br> 
     Please upload a text file with urls on individual lines.<br> 
