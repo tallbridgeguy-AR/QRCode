@@ -6,38 +6,107 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<!-- Add the 3D Model Viewer script here -->
+
+  <!-- Google 3D Model Viewer Web Component -->
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"></script>
+
+  <style>
+    /* Center all page content */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #333;
+    }
+
+    /* Style headings */
+    h2 {
+      font-size: 1.25rem;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+
+    /* Uniform input and button styling */
+    input[type="text"], input[type="file"] {
+      padding: 8px 12px;
+      margin: 10px 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Centered 3D Container */
+    .model-container {
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto 25px auto;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 250px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    /* Footer styling */
+    .footer {
+      margin-top: 40px;
+      color: #777;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 <body>
-<!-- Place the 3D Box inside the <body> -->
-  <div style="width: 100%; max-width: 200px; margin: 0 auto 20px auto;">
+
+  <!-- Interactive 3D Model Box -->
+  <div class="model-container">
     <model-viewer 
       src="mymodel.glb" 
       alt="3D Model" 
       camera-controls 
       auto-rotate 
-      shadow-intensity="1" 
-      style="width: 100%; height: 200px; background-color: #f4f4f4; border-radius: 8px;">
+      shadow-intensity="1">
     </model-viewer>
   </div>
-  
+
   <!-- Batch Section -->
   <h2>QR Creator:<br> 
     Please upload a text file with urls on individual lines.<br> 
     Then download the zip file of QR pngs.</h2>
-  <input type="file" id="fileInput" accept=".txt,.csv">
-  <button onclick="processFile()">Generate & Download ZIP</button>
+  <div>
+    <input type="file" id="fileInput" accept=".txt,.csv">
+    <button onclick="processFile()">Generate & Download ZIP</button>
+  </div>
 
-  <hr style="margin: 30px 0;">
+  <hr style="margin: 35px 0; border: 0; border-top: 1px solid #eee;">
 
   <!-- Single URL Section -->
   <h2>Single QR Creator:<br>
     Type in the url, and then download the QR code png</h2>
-  <input type="text" id="singleUrlInput" placeholder="https://example.com" style="width: 300px;">
-  <button onclick="generateSingleQr()">Download QR Code</button>
-<p><br><br>tallbridgeguy2026</p>
-  
+  <div>
+    <input type="text" id="singleUrlInput" placeholder="https://example.com" style="width: 280px;">
+    <button onclick="generateSingleQr()">Download QR Code</button>
+  </div>
+
+  <p class="footer">tallbridgeguy2026</p>
+
   <!-- Hidden temporary div for rendering QR codes -->
   <div id="qrcode-temp" style="display:none;"></div>
 
@@ -58,11 +127,11 @@
         tempDiv.innerHTML = '';
         const line = lines[i].trim();
 
-        // Generate QR Code
+        // Generate high-res QR Code (1000x1000 for print quality)
         const qrcode = new QRCode(tempDiv, {
           text: line,
-          width: 256,
-          height: 256
+          width: 1000,
+          height: 1000
         });
 
         // Small pause to allow canvas rendering
@@ -92,7 +161,7 @@
       const tempDiv = document.getElementById('qrcode-temp');
       tempDiv.innerHTML = '';
 
-      // Generate QR Code
+      // Generate high-res QR Code (1000x1000 for print quality)
       new QRCode(tempDiv, {
         text: url,
         width: 1000,
