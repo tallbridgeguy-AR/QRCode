@@ -8,13 +8,24 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
-  <h2>Upload Text File to Generate QR Codes</h2>
+
+  <!-- Batch Section -->
+  <h2>QR Creator: Please upload a text file with urls on individual lines. Then download the zip file of QR pngs.</h2>
   <input type="file" id="fileInput" accept=".txt,.csv">
   <button onclick="processFile()">Generate & Download ZIP</button>
 
+  <hr style="margin: 30px 0;">
+
+  <!-- Single URL Section -->
+  <h2>Type in the url, and then download the QR code png</h2>
+  <input type="text" id="singleUrlInput" placeholder="https://example.com" style="width: 300px;">
+  <button onclick="generateSingleQr()">Download QR Code</button>
+
+  <!-- Hidden temporary div for rendering QR codes -->
   <div id="qrcode-temp" style="display:none;"></div>
 
   <script>
+    // Process multiple URLs from a file
     async function processFile() {
       const fileInput = document.getElementById('fileInput');
       if (!fileInput.files.length) return alert('Please select a file!');
@@ -52,6 +63,38 @@
       zip.generateAsync({type:"blob"}).then(function(content) {
         saveAs(content, "qr_codes.zip");
       });
+    }
+
+    // Process a single URL from text input
+    async function generateSingleQr() {
+      const input = document.getElementById('singleUrlInput');
+      const url = input.value.trim();
+
+      if (!url) return alert('Please enter a URL!');
+
+      const tempDiv = document.getElementById('qrcode-temp');
+      tempDiv.innerHTML = '';
+
+      // Generate QR Code
+      new QRCode(tempDiv, {
+        text: url,
+        width: 256,
+        height: 256
+      });
+
+      // Small pause to allow canvas rendering
+      await new Promise(r => setTimeout(r, 50));
+
+      const img = tempDiv.querySelector('img') || tempDiv.querySelector('canvas');
+      let dataUrl = img.tagName === 'CANVAS' ? img.toDataURL('image/png') : img.src;
+
+      // Trigger standard browser download for single file
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'qrcode.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
