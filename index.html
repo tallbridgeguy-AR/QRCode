@@ -23,7 +23,8 @@
     Type in the url, and then download the QR code png</h2>
   <input type="text" id="singleUrlInput" placeholder="https://example.com" style="width: 300px;">
   <button onclick="generateSingleQr()">Download QR Code</button>
-
+<h2>tallbridgeguy</h2>
+  
   <!-- Hidden temporary div for rendering QR codes -->
   <div id="qrcode-temp" style="display:none;"></div>
 
@@ -81,8 +82,8 @@
       // Generate QR Code
       new QRCode(tempDiv, {
         text: url,
-        width: 256,
-        height: 256
+        width: 1000,
+        height: 1000
       });
 
       // Small pause to allow canvas rendering
@@ -99,8 +100,6 @@
       link.click();
       document.body.removeChild(link);
     }
-    <!--End tag   -->
-  <h2>tallbridgeguy</h2>
   </script>
 </body>
 </html>
