@@ -29,9 +29,9 @@
     }
 
     /* Uniform input and button styling */
-    input[type="text"], input[type="file"] {
+    input[type="text"], input[type="number"], input[type="file"] {
       padding: 8px 12px;
-      margin: 10px 5px;
+      margin: 5px;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
@@ -44,6 +44,7 @@
       border-radius: 4px;
       cursor: pointer;
       font-weight: bold;
+      margin-top: 5px;
     }
 
     button:hover {
@@ -71,6 +72,12 @@
       color: #777;
       font-size: 0.9rem;
     }
+
+    .note {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -88,10 +95,11 @@
 
   <!-- Batch Section -->
   <h2>QR Creator:<br> 
-    Please upload a text file with urls on individual lines.<br> 
+    Please upload a text/CSV file with URLs on individual lines.<br> 
     Then download the zip file of QR pngs.</h2>
   <div>
-    <input type="file" id="fileInput" accept=".txt,.csv">
+    <input type="file" id="fileInput" accept=".txt,.csv"><br>
+    <p class="note">Format per line: <code>https://example.com</code> or <code>https://example.com, 101</code></p>
     <button onclick="processFile()">Generate & Download ZIP</button>
   </div>
 
@@ -99,9 +107,11 @@
 
   <!-- Single URL Section -->
   <h2>Single QR Creator:<br>
-    Type in the url, and then download the QR code png</h2>
+    Type in the URL and optional ID, then download the QR code PNG</h2>
   <div>
-    <input type="text" id="singleUrlInput" placeholder="https://example.com" style="width: 280px;">
+    <input type="text" id="singleUrlInput" placeholder="https://example.com" style="width: 250px;">
+    <input type="text" id="singleIdInput" placeholder="ID / Number (e.g. 101)" style="width: 150px;">
+    <br>
     <button onclick="generateSingleQr()">Download QR Code</button>
   </div>
 
@@ -111,6 +121,13 @@
   <div id="qrcode-temp" style="display:none;"></div>
 
   <script>
+    // Helper function to append ID query parameter cleanly
+    function appendIdToUrl(url, id) {
+      if (!id) return url;
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}ID=${encodeURIComponent(id)}`;
+    }
+
     // Process multiple URLs from a file
     async function processFile() {
       const fileInput = document.getElementById('fileInput');
@@ -125,11 +142,22 @@
 
       for (let i = 0; i < lines.length; i++) {
         tempDiv.innerHTML = '';
-        const line = lines[i].trim();
+        const rawLine = lines[i].trim();
+        
+        // Check if line contains comma or tab separation (e.g., "url, id" or "url\tid")
+        const parts = rawLine.split(/,|\t/).map(p => p.trim());
+        let baseUrl = parts[0];
+        let idVal = parts[1] || '';
+
+        // Format target URL with query string parameter
+        const finalUrl = appendIdToUrl(baseUrl, idVal);
+
+        // Name file based on ID if available, otherwise index number
+        const fileName = idVal ? `qrcode_${idVal}.png` : `qrcode_${i + 1}.png`;
 
         // Generate high-res QR Code (1000x1000 for print quality)
-        const qrcode = new QRCode(tempDiv, {
-          text: line,
+        new QRCode(tempDiv, {
+          text: finalUrl,
           width: 1000,
           height: 1000
         });
@@ -142,7 +170,7 @@
         let base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
 
         // Add PNG to ZIP archive
-        zip.file(`qrcode_${i + 1}.png`, base64Data, {base64: true});
+        zip.file(fileName, base64Data, {base64: true});
       }
 
       // Generate ZIP and trigger browser download
@@ -153,17 +181,21 @@
 
     // Process a single URL from text input
     async function generateSingleQr() {
-      const input = document.getElementById('singleUrlInput');
-      const url = input.value.trim();
+      const urlInput = document.getElementById('singleUrlInput');
+      const idInput = document.getElementById('singleIdInput');
+      
+      const url = urlInput.value.trim();
+      const idVal = idInput.value.trim();
 
       if (!url) return alert('Please enter a URL!');
 
+      const finalUrl = appendIdToUrl(url, idVal);
       const tempDiv = document.getElementById('qrcode-temp');
       tempDiv.innerHTML = '';
 
       // Generate high-res QR Code (1000x1000 for print quality)
       new QRCode(tempDiv, {
-        text: url,
+        text: finalUrl,
         width: 1000,
         height: 1000
       });
@@ -174,10 +206,13 @@
       const img = tempDiv.querySelector('img') || tempDiv.querySelector('canvas');
       let dataUrl = img.tagName === 'CANVAS' ? img.toDataURL('image/png') : img.src;
 
+      // File naming logic based on presence of ID
+      const fileName = idVal ? `qrcode_${idVal}.png` : 'qrcode.png';
+
       // Trigger standard browser download for single file
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = 'qrcode.png';
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
