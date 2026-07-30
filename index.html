@@ -121,11 +121,18 @@
   <div id="qrcode-temp" style="display:none;"></div>
 
   <script>
-    // Helper function to append ID query parameter cleanly
-    function appendIdToUrl(url, id) {
-      if (!id) return url;
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}ID=${encodeURIComponent(id)}`;
+    // Helper function to append ?ID= directly to the URL
+    function appendIdToUrl(urlString, id) {
+      if (!id) return urlString;
+
+      let formattedUrl = urlString;
+      // Ensure the URL starts with a protocol so browser link handling remains valid
+      if (!/^https?:\/\//i.test(formattedUrl)) {
+        formattedUrl = 'https://' + formattedUrl;
+      }
+
+      // Appends ?ID= directly to the URL string
+      return `${formattedUrl}?ID=${encodeURIComponent(id)}`;
     }
 
     // Process multiple URLs from a file
@@ -144,36 +151,36 @@
         tempDiv.innerHTML = '';
         const rawLine = lines[i].trim();
         
-        // Check if line contains comma or tab separation (e.g., "url, id" or "url\tid")
+        // Split line by comma or tab (e.g., "url, id")
         const parts = rawLine.split(/,|\t/).map(p => p.trim());
         let baseUrl = parts[0];
         let idVal = parts[1] || '';
 
-        // Format target URL with query string parameter
+        // Generate target URL formatted as: https://example.com?ID=number
         const finalUrl = appendIdToUrl(baseUrl, idVal);
 
         // Name file based on ID if available, otherwise index number
         const fileName = idVal ? `qrcode_${idVal}.png` : `qrcode_${i + 1}.png`;
 
-        // Generate high-res QR Code (1000x1000 for print quality)
+        // Generate high-res QR Code (1000x1000)
         new QRCode(tempDiv, {
           text: finalUrl,
           width: 1000,
           height: 1000
         });
 
-        // Small pause to allow canvas rendering
+        // Pause for rendering
         await new Promise(r => setTimeout(r, 50));
         
         const img = tempDiv.querySelector('img') || tempDiv.querySelector('canvas');
         let dataUrl = img.tagName === 'CANVAS' ? img.toDataURL('image/png') : img.src;
         let base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
 
-        // Add PNG to ZIP archive
+        // Add to ZIP archive
         zip.file(fileName, base64Data, {base64: true});
       }
 
-      // Generate ZIP and trigger browser download
+      // Generate and download ZIP
       zip.generateAsync({type:"blob"}).then(function(content) {
         saveAs(content, "qr_codes.zip");
       });
@@ -193,23 +200,22 @@
       const tempDiv = document.getElementById('qrcode-temp');
       tempDiv.innerHTML = '';
 
-      // Generate high-res QR Code (1000x1000 for print quality)
+      // Generate high-res QR Code (1000x1000)
       new QRCode(tempDiv, {
         text: finalUrl,
         width: 1000,
         height: 1000
       });
 
-      // Small pause to allow canvas rendering
+      // Pause for rendering
       await new Promise(r => setTimeout(r, 50));
 
       const img = tempDiv.querySelector('img') || tempDiv.querySelector('canvas');
       let dataUrl = img.tagName === 'CANVAS' ? img.toDataURL('image/png') : img.src;
 
-      // File naming logic based on presence of ID
       const fileName = idVal ? `qrcode_${idVal}.png` : 'qrcode.png';
 
-      // Trigger standard browser download for single file
+      // Trigger file download
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = fileName;
