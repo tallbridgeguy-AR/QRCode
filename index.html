@@ -29,11 +29,29 @@
     }
 
     /* Uniform input and button styling */
-    input[type="text"], input[type="number"], input[type="file"] {
+    input[type="text"], input[type="number"], input[type="file"], input[type="datetime-local"] {
       padding: 8px 12px;
       margin: 5px;
       border: 1px solid #ccc;
       border-radius: 4px;
+    }
+
+    .time-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #555;
     }
 
     button {
@@ -99,7 +117,19 @@
     Then download the zip file of QR pngs.</h2>
   <div>
     <input type="file" id="fileInput" accept=".txt,.csv"><br>
-    <p class="note">Format per line: <code>https://example.com</code> or <code>https://example.com, 101</code></p>
+    <p class="note">Format per line: <code>https://example.com</code> or <code>https://example.com, 101, 2026-08-01T08:00, 2026-08-10T18:00</code></p>
+    
+    <div class="time-container">
+      <div class="input-group">
+        <label for="batchStartTime">Global Start Time (Optional):</label>
+        <input type="datetime-local" id="batchStartTime">
+      </div>
+      <div class="input-group">
+        <label for="batchEndTime">Global End Time (Optional):</label>
+        <input type="datetime-local" id="batchEndTime">
+      </div>
+    </div>
+
     <button onclick="processFile()">Generate & Download ZIP</button>
   </div>
 
@@ -107,11 +137,22 @@
 
   <!-- Single URL Section -->
   <h2>Single QR Creator:<br>
-    Type in the URL and optional ID, then download the QR code PNG</h2>
+    Type in the URL, optional ID, and active time window, then download the QR code PNG</h2>
   <div>
     <input type="text" id="singleUrlInput" placeholder="https://example.com" style="width: 250px;">
     <input type="text" id="singleIdInput" placeholder="ID / Number (e.g. 101)" style="width: 150px;">
-    <br>
+    
+    <div class="time-container">
+      <div class="input-group">
+        <label for="singleStartTime">Start Time:</label>
+        <input type="datetime-local" id="singleStartTime">
+      </div>
+      <div class="input-group">
+        <label for="singleEndTime">End Time:</label>
+        <input type="datetime-local" id="singleEndTime">
+      </div>
+    </div>
+
     <button onclick="generateSingleQr()">Download QR Code</button>
   </div>
 
@@ -121,9 +162,9 @@
   <div id="qrcode-temp" style="display:none;"></div>
 
   <script>
-    // Helper function to append ?ID= directly to the URL
-    function appendIdToUrl(urlString, id) {
-      if (!id) return urlString;
+    // Helper function to append ?ID=, &startTime=, and &endTime= to the URL
+    function appendParamsToUrl(urlString, id, startTime, endTime) {
+      if (!urlString) return '';
 
       let formattedUrl = urlString;
       // Ensure the URL starts with a protocol so browser link handling remains valid
@@ -131,8 +172,19 @@
         formattedUrl = 'https://' + formattedUrl;
       }
 
-      // Appends ?ID= directly to the URL string
-      return `${formattedUrl}?ID=${encodeURIComponent(id)}`;
+      const urlObj = new URL(formattedUrl);
+
+      if (id) {
+        urlObj.searchParams.set('ID', id);
+      }
+      if (startTime) {
+        urlObj.searchParams.set('startTime', startTime);
+      }
+      if (endTime) {
+        urlObj.searchParams.set('endTime', endTime);
+      }
+
+      return urlObj.toString();
     }
 
     // Process multiple URLs from a file
@@ -140,6 +192,9 @@
       const fileInput = document.getElementById('fileInput');
       if (!fileInput.files.length) return alert('Please select a file!');
       
+      const globalStartTime = document.getElementById('batchStartTime').value;
+      const globalEndTime = document.getElementById('batchEndTime').value;
+
       const file = fileInput.files[0];
       const text = await file.text();
       const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
@@ -151,13 +206,15 @@
         tempDiv.innerHTML = '';
         const rawLine = lines[i].trim();
         
-        // Split line by comma or tab (e.g., "url, id")
+        // Split line by comma or tab (e.g., "url, id, startTime, endTime")
         const parts = rawLine.split(/,|\t/).map(p => p.trim());
         let baseUrl = parts[0];
         let idVal = parts[1] || '';
+        let lineStartTime = parts[2] || globalStartTime;
+        let lineEndTime = parts[3] || globalEndTime;
 
-        // Generate target URL formatted as: https://example.com?ID=number
-        const finalUrl = appendIdToUrl(baseUrl, idVal);
+        // Generate target URL formatted with parameter queries
+        const finalUrl = appendParamsToUrl(baseUrl, idVal, lineStartTime, lineEndTime);
 
         // Name file based on ID if available, otherwise index number
         const fileName = idVal ? `qrcode_${idVal}.png` : `qrcode_${i + 1}.png`;
@@ -190,13 +247,17 @@
     async function generateSingleQr() {
       const urlInput = document.getElementById('singleUrlInput');
       const idInput = document.getElementById('singleIdInput');
+      const startTimeInput = document.getElementById('singleStartTime');
+      const endTimeInput = document.getElementById('singleEndTime');
       
       const url = urlInput.value.trim();
       const idVal = idInput.value.trim();
+      const startTime = startTimeInput.value;
+      const endTime = endTimeInput.value;
 
       if (!url) return alert('Please enter a URL!');
 
-      const finalUrl = appendIdToUrl(url, idVal);
+      const finalUrl = appendParamsToUrl(url, idVal, startTime, endTime);
       const tempDiv = document.getElementById('qrcode-temp');
       tempDiv.innerHTML = '';
 
